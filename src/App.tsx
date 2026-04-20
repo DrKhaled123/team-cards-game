@@ -330,7 +330,7 @@ export default function App() {
 
   // --- Card Selection ---
   const handlePlayCard = (card: Card) => {
-    if (showExplanation) return;
+    if (showExplanation || isAnswering) return;
     setSelectedCard(card);
     const q = getRandomQuestions(card.subject, 1)[0] || QUESTIONS_BANK[0];
     setCurrentQuestion(q);
@@ -587,34 +587,40 @@ export default function App() {
     const currentPlayer = players[currentPlayerIndex];
 
     return (
-      <div className="h-screen flex flex-col overflow-hidden select-none bg-dark-green text-[#E0E0E0]">
+      <div className="h-screen flex flex-col overflow-hidden select-none bg-dark-green text-[#E0E0E0] relative" dir="rtl">
+        {/* Background Patterns */}
+        <div className="absolute inset-0 opacity-5 pointer-events-none z-0">
+          <div className="absolute top-1/4 left-1/4 rotate-12"><Atom size={200} className="text-gold" /></div>
+          <div className="absolute bottom-1/4 right-1/4 -rotate-12"><Dna size={200} className="text-gold" /></div>
+        </div>
+
         {/* Top: Header/Scores */}
-        <div className="h-[70px] bg-black/40 border-b-2 border-gold flex items-center justify-between px-8 z-20 shrink-0">
+        <div className="h-[70px] bg-black/40 border-b-2 border-gold flex items-center justify-between px-8 z-30 shrink-0 backdrop-blur-md">
           <div className="flex items-center gap-4">
-             <div className="text-2xl font-black text-gold tracking-tighter flex items-center gap-2">
-                بطولة الثانوية ٢٠٢٦ 🏆
+             <div className="text-2xl font-black text-gold tracking-tighter flex items-center gap-4 drop-shadow-lg">
+                <Shield size={24} className="text-gold" />
+                بطولة العباقرة الثانوية ٢٠٢٦
              </div>
           </div>
           
-          <div className="flex items-center gap-6">
-             <div className="flex items-center gap-3 bg-deep-red/30 px-4 py-2 rounded-full border border-deep-red/50">
-                <div className="w-32 h-2 bg-gray-800 rounded-full overflow-hidden">
-                   <motion.div 
-                     initial={{ width: 0 }}
-                     animate={{ width: `${(timer / 60) * 100}%` }}
-                     className="h-full bg-red-500"
-                   />
+          <div className="flex items-center gap-8">
+             <div className="flex items-center gap-6 border-l border-white/10 pl-6 h-10">
+                <div className="flex flex-col items-end">
+                  <div className="text-[10px] font-black text-gold opacity-60">فريق العلوم (أ)</div>
+                  <div className="text-xl font-black text-white leading-none">{players[0].score + players[2].score}</div>
                 </div>
-                <Timer size={18} className="text-red-400" />
-                <span className="text-xl font-black min-w-[30px]">{timer}</span>
+                <div className="flex flex-col items-end">
+                  <div className="text-[10px] font-black text-red-400 opacity-60">فريق الرياضة (ب)</div>
+                  <div className="text-xl font-black text-white leading-none">{players[1].score + players[3].score}</div>
+                </div>
              </div>
 
-             <div className="flex items-center gap-3 border-r border-white/10 pr-6">
+             <div className="flex items-center gap-3">
                 <div className="text-left leading-none">
-                   <div className="text-[10px] opacity-60 uppercase font-black">اللاعب الحالي</div>
-                   <div className="text-lg font-black text-white">{currentPlayer.name}</div>
+                   <div className="text-[10px] opacity-60 uppercase font-black text-gold">اللاعب الحالي</div>
+                   <div className="text-lg font-black text-white">{players[currentPlayerIndex].name}</div>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-dark-green font-black">
+                <div className="w-10 h-10 rounded-full bg-gold flex items-center justify-center text-dark-green font-black shadow-[0_0_15px_rgba(200,168,75,0.4)]">
                    {currentPlayerIndex + 1}
                 </div>
              </div>
@@ -622,182 +628,175 @@ export default function App() {
         </div>
 
         {/* Main Viewport */}
-        <div className="flex-1 flex p-6 gap-6 relative">
+        <div className="flex-1 flex p-4 gap-4 relative overflow-hidden">
            
-           {/* Question / Activity Area */}
-           <div className="flex-[1.2] flex flex-col">
-              <AnimatePresence mode="wait">
-                 {isAnswering ? (
+           {/* Sidebar: Activity Log */}
+           <div className="w-72 flex flex-col gap-4 z-10">
+              <div className="bg-black/40 backdrop-blur-md rounded-[32px] border border-white/10 p-5 flex flex-col h-full shadow-2xl">
+                 <h4 className="text-sm font-black text-gold mb-4 flex items-center gap-2">
+                    <History size={16} /> ساحة المعركة
+                 </h4>
+                 <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-1">
+                    {history.length === 0 && (
+                      <div className="text-white/20 text-xs italic text-center mt-10">
+                        البطولة في بدايتها...
+                      </div>
+                    )}
+                    {history.slice().reverse().map((h, i) => (
+                       <motion.div 
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        key={i} 
+                        className="bg-white/5 p-3 rounded-2xl border border-white/5 text-right relative overflow-hidden"
+                       >
+                          <div className={`absolute top-0 right-0 w-1 h-full ${h.correct ? 'bg-green-500' : 'bg-red-500'}`} />
+                          <div className="font-black text-[10px] text-gold/60">{h.p}</div>
+                          <div className={`text-sm font-bold ${h.correct ? 'text-green-400' : 'text-red-400'}`}>
+                             {h.correct ? `أصاب! ${h.pts}+` : 'أخطأ الهدف'}
+                          </div>
+                       </motion.div>
+                    ))}
+                 </div>
+              </div>
+           </div>
+
+           {/* Table & Game Action Area */}
+           <div className="flex-1 relative flex flex-col items-center justify-center">
+              {/* Question Overlay */}
+              <AnimatePresence>
+                {isAnswering && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-dark-green/30 backdrop-blur-md"
+                  >
                     <motion.div 
-                      key="q-box"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="bg-white/5 rounded-[32px] border border-gold/20 p-10 flex flex-col h-full shadow-2xl backdrop-blur-sm relative"
+                      initial={{ scale: 0.9, y: 20 }}
+                      animate={{ scale: 1, y: 0 }}
+                      exit={{ scale: 0.9, y: 20 }}
+                      className="bg-[#0a1a12]/95 w-full max-w-4xl h-full max-h-[720px] rounded-[56px] border-2 border-gold/30 p-12 flex flex-col shadow-2xl relative overflow-hidden overflow-y-auto custom-scrollbar"
                     >
-                       <div className="flex justify-between items-start mb-6 w-full">
-                         <div className="bg-gold text-dark-green px-4 py-1 rounded-lg font-black text-sm">
+                       <div className="flex justify-between items-start mb-8 w-full z-10 shrink-0">
+                         <div className="bg-gold text-dark-green px-8 py-2 rounded-xl font-black text-xl shadow-xl">
                             {selectedCard?.subject}
                          </div>
-                         {players[currentPlayerIndex].isAI && !showExplanation && (
-                            <div className="flex items-center gap-2 text-gold animate-pulse">
-                               <span className="text-xs font-black">الـ AI يفكر في الحل...</span>
-                               <Brain size={16} />
-                            </div>
-                         )}
+                         <div className="flex flex-col items-end gap-3 font-black">
+                           <div className="bg-deep-red/40 px-6 py-2 rounded-full border-2 border-deep-red text-white flex items-center gap-3">
+                                <Timer size={24} /> {timer}
+                           </div>
+                         </div>
                        </div>
-
-                       <h2 className="text-4xl font-bold leading-[1.4] mb-12 text-white text-right">
-                          {passedToTeammate ? <span className="text-blue-400 block mb-2 text-xl">(دور الزميل: {players[players[currentPlayerIndex].isTeammateOf].name})</span> : ''}
-                          {currentQuestion?.text}
-                       </h2>
-
-                       <div className="grid grid-cols-2 gap-4 mt-auto">
-                          {currentQuestion?.options.map((opt, i) => {
-                             const isCorrect = i === currentQuestion.correctIndex;
-                             const isSelected = lastAnswerInfo?.selectedIndex === i;
-                             
-                             let btnClass = "bg-white/10 border-white/20";
-                             if (showExplanation) {
-                                if (isCorrect) btnClass = "bg-green-500/40 border-green-500 text-white";
-                                else if (isSelected) btnClass = "bg-red-500/40 border-red-500 text-white";
-                                else btnClass = "opacity-30 border-white/10";
-                             }
-
-                             return (
+                       
+                       <div className="flex-1 flex flex-col justify-center gap-8 z-10">
+                          <h2 className="text-4xl md:text-5xl font-black text-right text-white">
+                             {currentQuestion?.text}
+                          </h2>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             {currentQuestion?.options.map((opt, i) => (
                                 <button
                                    key={i}
                                    onClick={() => !showExplanation && handleAnswer(i)}
                                    disabled={showExplanation}
-                                   className={`p-6 rounded-2xl text-right font-bold text-xl flex items-center group transition-all border ${btnClass} ${!showExplanation ? 'hover:bg-gold/15 hover:border-gold' : ''}`}
+                                   className={`p-6 rounded-[24px] text-right font-black text-xl border-2 transition-all ${showExplanation ? (i === currentQuestion.correctIndex ? 'bg-green-600 border-green-400' : (lastAnswerInfo?.selectedIndex === i ? 'bg-red-600 border-red-400' : 'opacity-20')) : 'bg-white/5 border-white/10 hover:border-gold'}`}
                                 >
-                                   <div className={`w-8 h-8 rounded-full border-2 ml-4 flex items-center justify-center transition-colors ${showExplanation && isCorrect ? 'bg-green-500 border-green-500 text-white' : 'border-gold group-hover:bg-gold group-hover:text-dark-green'}`}>
-                                      {['أ', 'ب', 'ج', 'د'][i]}
-                                   </div>
-                                   <span className="flex-1">{opt}</span>
+                                   {opt}
                                 </button>
-                             );
-                          })}
+                             ))}
+                          </div>
                        </div>
 
-                       <AnimatePresence>
-                          {showExplanation && (
-                             <motion.div 
-                               initial={{ opacity: 0, y: 30 }}
-                               animate={{ opacity: 1, y: 0 }}
-                               className="mt-8 bg-black/40 border-2 border-gold/40 p-6 rounded-[24px] relative"
-                             >
-                                <button 
-                                  onClick={handleCloseQuestion}
-                                  className="absolute -top-3 -right-3 w-8 h-8 bg-gold text-dark-green rounded-full flex items-center justify-center font-black shadow-lg hover:scale-110 active:scale-95 transition-transform"
-                                >
-                                   X
-                                </button>
-                                <div className="text-gold font-black mb-2 flex items-center gap-2">
-                                   <AlertCircle size={20}/> الشرح التعليمي:
-                                </div>
-                                <div className="max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
-                                   <p className="text-white/80 leading-relaxed text-lg">
-                                      {currentQuestion?.explanation}
-                                   </p>
-                                </div>
-                             </motion.div>
-                          )}
-                       </AnimatePresence>
-
-                       {selectedCard?.special !== 'NONE' && (
-                          <div className="mt-8 flex items-center gap-4 p-4 bg-gold/10 border border-gold/20 rounded-2xl">
-                             <div className="text-2xl">⚠️</div>
-                             <div className="text-sm text-gold">
-                                تفعيل قدرة <b>"{selectedCard.name}"</b>: {selectedCard.special === 'DOUBLE_STRIKE' ? 'خصم نقاط وتجميد الخصم!' : 'تأثير إضافي قوي للنتيجة!'}
-                             </div>
+                       {showExplanation && (
+                          <div className="mt-8 bg-black/40 border-2 border-gold p-6 rounded-[32px] relative">
+                             <button onClick={handleCloseQuestion} className="absolute -top-4 -right-4 w-12 h-12 bg-gold text-dark-green rounded-full flex items-center justify-center font-black text-2xl">X</button>
+                             <div className="text-gold font-black mb-2 flex items-center gap-3"><BookOpen size={20}/> التفسير:</div>
+                             <p className="text-white text-xl text-right">{currentQuestion?.explanation}</p>
                           </div>
                        )}
                     </motion.div>
-                 ) : (
-                    <motion.div 
-                       key="empty-table"
-                       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                       className="flex flex-col items-center justify-center h-full bg-white/5 rounded-[32px] border border-white/10"
-                    >
-                        <Brain size={120} className="text-gold/20 mb-6" />
-                        <h3 className="text-3xl font-black text-white/40">بانتظار اختيار كارت...</h3>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Table (Tarneeb Style) */}
+              <div className="w-full max-w-2xl aspect-square rounded-full border-[15px] border-black/20 flex items-center justify-center relative bg-[#0d2b1a] shadow-inner">
+                 <div className="absolute top-0 -translate-y-1/2 flex flex-col items-center gap-1 opacity-60">
+                    <div className="w-20 h-20 rounded-2xl bg-black/40 flex items-center justify-center border-2 border-white/10"><Users size={32} /></div>
+                    <span className="text-xs font-black">{players[2].name}</span>
+                 </div>
+                 <div className="absolute bottom-0 translate-y-1/2 flex flex-col items-center gap-1">
+                    <div className="w-24 h-24 rounded-2xl bg-gold/20 flex items-center justify-center border-4 border-gold shadow-lg"><Users size={40} className="text-gold" /></div>
+                    <span className="text-sm font-black text-gold">{players[0].name} (أنت)</span>
+                 </div>
+                 <div className="absolute left-0 -translate-x-1/2 flex items-center gap-4 opacity-60">
+                    <div className="flex flex-col items-center gap-1">
+                       <div className="w-20 h-20 rounded-2xl bg-black/40 flex items-center justify-center border-2 border-white/10"><Brain size={32} /></div>
+                       <span className="text-xs font-black">{players[3].name}</span>
+                    </div>
+                 </div>
+                 <div className="absolute right-0 translate-x-1/2 flex items-center gap-4 opacity-60">
+                    <div className="flex flex-col items-center gap-1">
+                       <div className="w-20 h-20 rounded-2xl bg-black/40 flex items-center justify-center border-2 border-white/10"><Brain size={32} /></div>
+                       <span className="text-xs font-black">{players[1].name}</span>
+                    </div>
+                 </div>
+
+                 {selectedCard && (
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1.2 }} className="z-30 shadow-2xl">
+                       <CardView card={selectedCard} />
                     </motion.div>
                  )}
-              </AnimatePresence>
-           </div>
-
-           {/* Table & Scores Area */}
-           <div className="flex-[0.8] flex flex-col gap-6">
-              {/* Scoreboard */}
-              <div className="flex gap-4">
-                 <div className="flex-1 bg-black/30 rounded-2xl p-5 border-t-4 border-gold shadow-lg">
-                    <div className="text-[10px] font-black opacity-60 uppercase mb-1">فريق أ</div>
-                    <div className="text-4xl font-black text-white">{players[0].score + players[2].score}</div>
-                 </div>
-                 <div className="flex-1 bg-black/30 rounded-2xl p-5 border-t-4 border-deep-red shadow-lg">
-                    <div className="text-[10px] font-black opacity-60 uppercase mb-1">فريق ب</div>
-                    <div className="text-4xl font-black text-white">{players[1].score + players[3].score}</div>
-                 </div>
-              </div>
-
-              {/* Table Visualization */}
-              <div className="flex-1 bg-radial-[circle] from-accent-green to-dark-green rounded-full border-4 border-black/40 relative flex items-center justify-center shadow-inner overflow-hidden">
-                 {/* Players positions */}
-                 <div className="absolute top-4 font-black bg-dark-green/80 px-3 py-1 rounded-full border border-gold text-xs">١: {players[0].name}</div>
-                 <div className="absolute right-4 font-black bg-dark-green/80 px-3 py-1 rounded-full border border-gold text-xs">٢: {players[1].name}</div>
-                 <div className="absolute bottom-4 font-black bg-dark-green/80 px-3 py-1 rounded-full border border-gold text-xs">٣: {players[2].name}</div>
-                 <div className="absolute left-4 font-black bg-dark-green/80 px-3 py-1 rounded-full border border-gold text-xs">٤: {players[3].name}</div>
-
-                 {/* Center Card (History/Current) */}
-                 <div className="w-24 h-36 bg-gold-cream rounded-xl border-2 border-gold shadow-2xl flex flex-col items-center justify-center text-dark-green rotate-[-6deg]">
-                    <span className="text-[10px] font-bold opacity-60 uppercase">السابق</span>
-                    <Trophy size={40} />
-                    <span className="text-lg font-black mt-2">٢٠٠+</span>
-                 </div>
-              </div>
-
-              {/* Action Hints */}
-              <div className="bg-black/20 p-4 rounded-2xl border border-white/5 text-center italic text-gold text-sm">
-                 {effects.length > 0 ? effects[effects.length - 1] : 'الدور الآن على الفريق أ لبدء المواجهة'}
               </div>
            </div>
         </div>
 
         {/* Hand Section */}
-        <div className="h-[260px] bg-black/80 border-t border-white/10 flex items-end justify-center px-10 pb-12 relative z-10">
-           {isAiThinking && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-gold/10 px-4 py-2 rounded-full border border-gold/20 text-gold font-black text-sm animate-pulse">
-                 جاري التخطيط للخطوة التالية...
-              </div>
+        <div className="h-[280px] bg-gradient-to-t from-[#050d0a] to-[#0d2b1a] border-t-4 border-gold/20 flex items-end justify-center px-10 pb-16 relative z-40 shrink-0">
+           {isAiThinking && players[currentPlayerIndex].isAI && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute top-8 left-1/2 -translate-x-1/2 bg-gold/10 px-12 py-3 rounded-full border-2 border-gold text-gold font-black text-xl animate-pulse shadow-[0_0_40px_rgba(200,168,75,0.2)] z-50 backdrop-blur-md"
+              >
+                 {players[currentPlayerIndex].name} يخطط لضربته القادمة...
+              </motion.div>
            )}
-           <div className="flex gap-[-30px] items-end justify-center w-full max-w-5xl">
-              {(hands[currentPlayerIndex] || []).map((card: Card, idx) => (
-                <div 
-                  key={card.id} 
-                  className="mx-[-20px] transition-transform duration-300" 
-                  style={{ 
-                    transform: `rotate(${(idx - 2) * 5}deg) translateY(${Math.abs(idx - 2) * 15}px)`,
-                    zIndex: idx
-                  }}
-                >
-                  <CardView 
-                    card={card} 
-                    onClick={() => handlePlayCard(card)} 
-                    disabled={isAnswering || players[currentPlayerIndex].isAI}
-                    isSelected={selectedCard?.id === card.id}
-                  />
-                </div>
-              ))}
+           
+           <div className="flex items-end justify-center w-full max-w-7xl pt-10">
+              <div className="flex -space-x-12 md:-space-x-16 lg:-space-x-20 rtl:space-x-reverse justify-center items-end h-full w-full">
+                {(hands[0] || []).map((card: Card, idx) => (
+                  <motion.div 
+                    key={card.id} 
+                    whileHover={{ 
+                      y: -100, 
+                      scale: 1.15, 
+                      zIndex: 100,
+                      rotate: 0,
+                      transition: { duration: 0.2 } 
+                    }}
+                    className="transition-all duration-300 origin-bottom" 
+                    style={{ 
+                      zIndex: idx,
+                      transform: `rotate(${(idx - (hands[0].length / 2)) * 3}deg)`
+                    }}
+                  >
+                    <CardView 
+                      card={card} 
+                      onClick={() => handlePlayCard(card)} 
+                      disabled={isAnswering || players[currentPlayerIndex].isAI || gameState !== 'playing' || currentPlayerIndex !== 0}
+                      isSelected={selectedCard?.id === card.id}
+                    />
+                  </motion.div>
+                ))}
+              </div>
            </div>
 
-           {/* Special Buttons */}
-           <div className="absolute left-10 bottom-8">
+           <div className="absolute left-12 bottom-12">
               <button 
                 onClick={() => setGameState('intro')}
-                className="bg-gold text-dark-green px-6 py-2 rounded-full font-black text-sm hover:scale-105 transition-transform shadow-lg"
+                className="bg-white/5 text-white/40 hover:text-red-400 hover:bg-red-500/10 px-8 py-3 rounded-2xl font-black text-xs transition-all border border-white/10 hover:border-red-500/50 uppercase tracking-widest backdrop-blur-sm"
               >
-                 انسحاب تكتيكي
+                 انسحاب مشرف
               </button>
            </div>
         </div>
